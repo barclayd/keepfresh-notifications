@@ -8,14 +8,14 @@ export const createV1Routes = () => {
   const app = new OpenAPIHono<HonoEnvironment>();
 
   app.openapi(routes.devices.post, async (c) => {
-    const { token, platform, appVersion } = c.req.valid('json');
+    const { deviceToken, platform, appVersion } = c.req.valid('json');
 
     const userId = c.get('userId');
 
     const { error } = await c.get('supabase').from('device_tokens').upsert(
       {
         user_id: userId,
-        token,
+        token: deviceToken,
         platform,
         app_version: appVersion,
         last_used_at: new Date().toISOString(),

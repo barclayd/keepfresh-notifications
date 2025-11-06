@@ -13,7 +13,7 @@ export const routes = {
           content: {
             'application/json': {
               schema: z.object({
-                token: z.string(),
+                deviceToken: z.string(),
                 platform: z.enum(['ios']),
                 appVersion: z.string(),
               }),

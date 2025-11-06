@@ -27,7 +27,7 @@ const sendNotification = async () => {
   const title = '';
   const body = '';
 
-  const items = [];
+  const items = [{ id: 1 }];
 
   const notification = new Notification(deviceToken, {
     alert: {
