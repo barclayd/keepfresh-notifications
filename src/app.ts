@@ -18,7 +18,7 @@ const sendNotification = async () => {
     keyId: env.APNS_KEY_ID,
     signingKey: env.APNS_SIGNING_KEY,
     defaultTopic: env.APNS_BUNDLE_ID,
-    // host: 'api.sandbox.push.apple.com' // Uncomment for testing
+    host: 'api.sandbox.push.apple.com',
   });
 
   // get userDevice token

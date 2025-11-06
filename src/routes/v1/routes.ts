@@ -54,4 +54,54 @@ export const routes = {
       ],
     }),
   },
+  notifications: {
+    post: createRoute({
+      method: 'post',
+      path: '/notifications',
+      // request: {
+      //   body: {
+      //     content: {
+      //       'application/json': {
+      //         schema: z.object({
+      //           deviceToken: z.string(),
+      //           platform: z.enum(['ios']),
+      //           appVersion: z.string(),
+      //         }),
+      //       },
+      //     },
+      //   },
+      // },
+      middleware: [supabaseMiddleware, authMiddleware],
+      responses: {
+        204: {
+          description: 'Successfully updated devices for user',
+        },
+        400: {
+          content: {
+            'application/json': {
+              schema: z.object({
+                error: z.string(),
+              }),
+            },
+          },
+          description: 'Error occurred when processing payload',
+        },
+        401: {
+          content: {
+            'application/json': {
+              schema: z.object({
+                error: z.string(),
+              }),
+            },
+          },
+          description: 'Authorization error response from Notifications API',
+        },
+      },
+      security: [
+        {
+          Bearer: [],
+        },
+      ],
+    }),
+  },
 };

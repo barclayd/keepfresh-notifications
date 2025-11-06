@@ -1,5 +1,7 @@
+import { ApnsClient, Notification } from '@fivesheepco/cloudflare-apns2';
 import { OpenAPIHono } from '@hono/zod-openapi';
 import { Scalar } from '@scalar/hono-api-reference';
+import { env } from '@/config/env';
 import { routes } from '@/routes/v1/routes';
 
 import type { HonoEnvironment } from '@/types/hono';
@@ -33,6 +35,68 @@ export const createV1Routes = () => {
         400,
       );
     }
+
+    return c.body(null, 204);
+  });
+
+  app.openapi(routes.notifications.post, async (c) => {
+    const userId = c.get('userId');
+
+    const { data, error } = await c
+      .get('supabase')
+      .from('device_tokens')
+      .select('token')
+      .eq('user_id', userId);
+
+    if (error) {
+      return c.json(
+        {
+          error: `Error occurred registering device for user. Error=${JSON.stringify(error)}`,
+        },
+        400,
+      );
+    }
+
+    const tokens = data?.map(({ token }) => token);
+
+    const deviceToken = tokens[0];
+
+    if (!data || !deviceToken) {
+      return c.json(
+        {
+          error: `No device tokens found for user`,
+        },
+        400,
+      );
+    }
+
+    const apnsClient = new ApnsClient({
+      team: env.APNS_TEAM_ID,
+      keyId: env.APNS_KEY_ID,
+      signingKey: env.APNS_SIGNING_KEY,
+      defaultTopic: env.APNS_BUNDLE_ID,
+      host: 'api.sandbox.push.apple.com',
+    });
+
+    const title = 'Test';
+    const body = 'Notification';
+
+    const items = [{ id: 1 }];
+
+    const notification = new Notification(deviceToken, {
+      alert: {
+        title,
+        body,
+      },
+      badge: items.length,
+      sound: 'default',
+      data: {
+        type: 'expiring_food',
+        foodIds: items.map((item) => item.id),
+      },
+    });
+
+    await apnsClient.send(notification);
 
     return c.body(null, 204);
   });
