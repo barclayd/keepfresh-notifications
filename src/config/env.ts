@@ -9,6 +9,13 @@ const envSchema = z.object({
   APNS_SIGNING_KEY: z
     .string()
     .min(1, 'APNS_SIGNING_KEY must be at least 32 characters'),
+  APNS_TEAM_ID: z
+    .string()
+    .min(1, 'APNS_TEAM_ID must be at least 32 characters'),
+  APNS_KEY_ID: z.string().min(1, 'APNS_TEAM_ID must be at least 32 characters'),
+  APNS_BUNDLE_ID: z
+    .string()
+    .min(1, 'APNS_BUNDLE_ID must be at least 32 characters'),
 });
 
 export const env = envSchema.parse(process.env);

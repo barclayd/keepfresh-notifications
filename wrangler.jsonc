@@ -16,11 +16,5 @@
       "binding": "keepfresh_genmoji",
       "id": "922ac7032e1e403fb76f591aea4352da"
     }
-  ],
-  "vars": {
-    "APNS_TEAM_ID": "R2GGK3VN2C",
-    "APNS_KEY_ID": "QXV36QGJ3T",
-    "APNS_BUNDLE_ID": "com.yourcompany.keepfresh",
-    "SUPABASE_URL": "dev.danbarclay.keepfresh"
-  }
+  ]
 }
