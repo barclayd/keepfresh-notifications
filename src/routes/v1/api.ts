@@ -7,7 +7,33 @@ import type { HonoEnvironment } from '@/types/hono';
 export const createV1Routes = () => {
   const app = new OpenAPIHono<HonoEnvironment>();
 
-  app.openapi(routes.notifications.post, async (c) => {
+  app.openapi(routes.devices.post, async (c) => {
+    const { token, platform, appVersion } = c.req.valid('json');
+
+    const userId = c.get('userId');
+
+    const { error } = await c.get('supabase').from('device_tokens').upsert(
+      {
+        user_id: userId,
+        token,
+        platform,
+        app_version: appVersion,
+        last_used_at: new Date().toISOString(),
+      },
+      {
+        onConflict: 'user_id,token',
+      },
+    );
+
+    if (error) {
+      return c.json(
+        {
+          error: `Error occurred registering device for user. Error=${JSON.stringify(error)}`,
+        },
+        400,
+      );
+    }
+
     return c.body(null, 204);
   });
 
