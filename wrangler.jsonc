@@ -3,6 +3,9 @@
   "main": "./src/app.ts",
   "compatibility_date": "2025-09-06",
   "compatibility_flags": ["nodejs_compat"],
+  "triggers": {
+    "crons": ["0 9 * * *"]
+  },
   "observability": {
     "logs": {
       "enabled": true
@@ -13,5 +16,11 @@
       "binding": "keepfresh_genmoji",
       "id": "922ac7032e1e403fb76f591aea4352da"
     }
-  ]
+  ],
+  "vars": {
+    "APNS_TEAM_ID": "R2GGK3VN2C",
+    "APNS_KEY_ID": "QXV36QGJ3T",
+    "APNS_BUNDLE_ID": "com.yourcompany.keepfresh",
+    "SUPABASE_URL": "dev.danbarclay.keepfresh"
+  }
 }
