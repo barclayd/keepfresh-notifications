@@ -93,7 +93,7 @@ export const createV1Routes = () => {
       data: {
         type: 'expiring_food',
         foodIds: items.map((item) => item.id),
-        genmoji: 'milk',
+        genmojiId: 'milk',
       },
     });
 
