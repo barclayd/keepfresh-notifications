@@ -1,0 +1,17 @@
+{
+  "name": "keepfresh-notifications",
+  "main": "./src/app.ts",
+  "compatibility_date": "2025-09-06",
+  "compatibility_flags": ["nodejs_compat"],
+  "observability": {
+    "logs": {
+      "enabled": true
+    }
+  },
+  "kv_namespaces": [
+    {
+      "binding": "keepfresh_genmoji",
+      "id": "922ac7032e1e403fb76f591aea4352da"
+    }
+  ]
+}
