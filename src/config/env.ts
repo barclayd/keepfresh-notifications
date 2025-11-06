@@ -6,6 +6,9 @@ const envSchema = z.object({
   SUPABASE_JWT_SECRET: z
     .string()
     .min(32, 'SUPABASE_JWT_SECRET must be at least 32 characters'),
+  APNS_SIGNING_KEY: z
+    .string()
+    .min(1, 'APNS_SIGNING_KEY must be at least 32 characters'),
 });
 
 export const env = envSchema.parse(process.env);
