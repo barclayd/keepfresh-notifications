@@ -90,6 +90,7 @@ export const createV1Routes = () => {
       },
       badge: items.length,
       sound: 'default',
+      mutableContent: true,
       data: {
         type: 'expiring_food',
         foodIds: items.map((item) => item.id),
