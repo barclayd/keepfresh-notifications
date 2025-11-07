@@ -7,11 +7,9 @@ import { createClient } from '@supabase/supabase-js';
 import { type Env, Hono } from 'hono';
 import { env } from '@/config/env';
 import { createV1Routes } from '@/routes/v1/api';
-import { InventoryItemNotificationsSchema } from '@/schemas/inventory-item';
 import type { Database } from '@/types/database';
 import type { HonoEnvironment } from '@/types/hono';
-import { getRelativeExpiry } from '@/utils/date';
-import { truncate } from '@/utils/product';
+import { buildNotificationBody, groupItemsByUser } from '@/utils/notification';
 import { sendWithRetry } from '@/utils/retry';
 
 const app = new Hono<HonoEnvironment>();
@@ -67,6 +65,7 @@ export default {
       )
     ),
     user:users!inner (
+      id,
       device_tokens!inner (
         token
       )
@@ -86,21 +85,30 @@ export default {
       return;
     }
 
-    const inventoryItemNotifications = InventoryItemNotificationsSchema.parse(
-      data?.map((item) => ({
-        id: item.id,
-        storageLocation: item.storage_location,
-        expiryType: item.expiry_type,
-        status: item.status,
-        product: {
-          ...item.product,
-          category: {
-            ...item.product.category,
-          },
+    const inventoryItemsWithUser = data?.map((item) => ({
+      id: item.id,
+      storageLocation: item.storage_location,
+      expiryType: item.expiry_type,
+      status: item.status,
+      product: {
+        name: item.product.name,
+        brand: item.product.brand,
+        amount: item.product.amount,
+        unit: item.product.unit,
+        category: {
+          icon: item.product.category.icon,
         },
-        deviceTokens: item.user.device_tokens.map(({ token }) => token),
-      })),
-    );
+      },
+      userId: item.user.id,
+      deviceTokens: item.user.device_tokens.map(({ token }) => token),
+    }));
+
+    if (!inventoryItemsWithUser || inventoryItemsWithUser.length === 0) {
+      console.log('No items to notify about');
+      return;
+    }
+
+    const userNotificationGroups = groupItemsByUser(inventoryItemsWithUser);
 
     const apnsClient = new ApnsClient({
       team: env.APNS_TEAM_ID,
@@ -110,30 +118,41 @@ export default {
       host: 'api.sandbox.push.apple.com',
     });
 
-    const allNotifications = inventoryItemNotifications.flatMap(
-      (inventoryItemNotification) => {
-        const title = `⚠️ Products expiring in 2 days`;
-        const body = `${truncate(inventoryItemNotification.product.name)} (${inventoryItemNotification.product.brand}), located in your ${inventoryItemNotification.storageLocation.toLowerCase()} expires ${getRelativeExpiry(2)}`;
+    const allNotifications = userNotificationGroups.flatMap((userGroup) => {
+      const body = buildNotificationBody(userGroup.items, 2);
 
-        return inventoryItemNotification.deviceTokens.map((deviceToken) =>
-          sendWithRetry(async () => {
-            await apnsClient.send(
-              new Notification(deviceToken, {
-                alert: { title, body },
-                badge: 1,
-                sound: 'default',
-                mutableContent: true,
-                data: {
-                  type: 'expiringFood',
-                  inventoryItemId: inventoryItemNotification.id,
-                  genmojiId: inventoryItemNotification.product.category.icon,
-                },
-              }),
-            );
-          }),
-        );
-      },
-    );
+      if (!body) {
+        return [];
+      }
+
+      const title =
+        userGroup.items.length === 1
+          ? `⚠️ 1 product expiring in 2 days`
+          : `⚠️ ${userGroup.items.length} products expiring in 2 days`;
+
+      const firstItem = inventoryItemsWithUser.find(
+        (item) => item.id === userGroup.items[0]?.id,
+      );
+
+      return userGroup.deviceTokens.map((deviceToken) =>
+        sendWithRetry(async () => {
+          await apnsClient.send(
+            new Notification(deviceToken, {
+              alert: { title, body },
+              badge: userGroup.items.length,
+              sound: 'default',
+              mutableContent: true,
+              data: {
+                type: 'expiringFood',
+                inventoryItemId: userGroup.items[0]?.id,
+                genmojiId: firstItem?.product.category.icon,
+                itemCount: userGroup.items.length,
+              },
+            }),
+          );
+        }),
+      );
+    });
 
     const results = await Promise.allSettled(allNotifications);
 

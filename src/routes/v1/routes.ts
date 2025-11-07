@@ -58,19 +58,6 @@ export const routes = {
     post: createRoute({
       method: 'post',
       path: '/notifications',
-      // request: {
-      //   body: {
-      //     content: {
-      //       'application/json': {
-      //         schema: z.object({
-      //           deviceToken: z.string(),
-      //           platform: z.enum(['ios']),
-      //           appVersion: z.string(),
-      //         }),
-      //       },
-      //     },
-      //   },
-      // },
       middleware: [supabaseMiddleware, authMiddleware],
       responses: {
         204: {
