@@ -134,6 +134,12 @@ export default {
         (item) => item.id === userGroup.items[0]?.id,
       );
 
+      console.log('firstItemId: ', firstItem?.id);
+      console.log(
+        'itemIds: ',
+        userGroup.items.map((item) => item.id).join(', '),
+      );
+
       return userGroup.deviceTokens.map((deviceToken) =>
         sendWithRetry(async () => {
           await apnsClient.send(
@@ -144,7 +150,7 @@ export default {
               mutableContent: true,
               data: {
                 type: 'expiringFood',
-                inventoryItemId: userGroup.items[0]?.id,
+                inventoryItemId: firstItem?.id,
                 genmojiId: firstItem?.product.category.icon,
                 itemCount: userGroup.items.length,
               },
