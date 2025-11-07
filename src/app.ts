@@ -51,7 +51,7 @@ export default {
     const { data, error } = await supabase
       .from('inventory_items')
       .select(`
-    id,  
+    id,
     storage_location,
     status,
     expiry_type,
@@ -67,11 +67,13 @@ export default {
     user:users!inner (
       id,
       device_tokens!inner (
-        token
+        token,
+        environment
       )
     )
   `)
-      .eq('expiry_date', targetDate);
+      .eq('expiry_date', targetDate)
+      .eq('user.device_tokens.environment', env.APNS_ENVIRONMENT);
 
     if (error) {
       console.error(
@@ -110,12 +112,17 @@ export default {
 
     const userNotificationGroups = groupItemsByUser(inventoryItemsWithUser);
 
+    const apnsHost =
+      env.APNS_ENVIRONMENT === 'production'
+        ? 'api.push.apple.com'
+        : 'api.sandbox.push.apple.com';
+
     const apnsClient = new ApnsClient({
       team: env.APNS_TEAM_ID,
       keyId: env.APNS_KEY_ID,
       signingKey: env.APNS_SIGNING_KEY,
       defaultTopic: env.APNS_BUNDLE_ID,
-      host: 'api.sandbox.push.apple.com',
+      host: apnsHost,
     });
 
     const allNotifications = userNotificationGroups.flatMap((userGroup) => {

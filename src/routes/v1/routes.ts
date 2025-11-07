@@ -15,6 +15,7 @@ export const routes = {
               schema: z.object({
                 deviceToken: z.string(),
                 platform: z.enum(['ios']),
+                environment: z.enum(['development', 'production']),
                 appVersion: z.string(),
               }),
             },

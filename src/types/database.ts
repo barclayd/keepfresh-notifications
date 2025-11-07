@@ -93,6 +93,7 @@ export type Database = {
         Row: {
           app_version: string | null;
           created_at: string;
+          environment: string;
           id: number;
           last_used_at: string | null;
           platform: string | null;
@@ -102,6 +103,7 @@ export type Database = {
         Insert: {
           app_version?: string | null;
           created_at?: string;
+          environment?: string;
           id?: number;
           last_used_at?: string | null;
           platform?: string | null;
@@ -111,6 +113,7 @@ export type Database = {
         Update: {
           app_version?: string | null;
           created_at?: string;
+          environment?: string;
           id?: number;
           last_used_at?: string | null;
           platform?: string | null;

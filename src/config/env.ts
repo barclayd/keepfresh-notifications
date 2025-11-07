@@ -16,6 +16,7 @@ const envSchema = z.object({
   APNS_BUNDLE_ID: z
     .string()
     .min(1, 'APNS_BUNDLE_ID must be at least 32 characters'),
+  APNS_ENVIRONMENT: z.enum(['development', 'production']).default('production'),
 });
 
 export const env = envSchema.parse(process.env);

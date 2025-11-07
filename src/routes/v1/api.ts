@@ -10,7 +10,8 @@ export const createV1Routes = () => {
   const app = new OpenAPIHono<HonoEnvironment>();
 
   app.openapi(routes.devices.post, async (c) => {
-    const { deviceToken, platform, appVersion } = c.req.valid('json');
+    const { deviceToken, platform, appVersion, environment } =
+      c.req.valid('json');
 
     const userId = c.get('userId');
 
@@ -20,10 +21,11 @@ export const createV1Routes = () => {
         token: deviceToken,
         platform,
         app_version: appVersion,
+        environment,
         last_used_at: new Date().toISOString(),
       },
       {
-        onConflict: 'user_id,token',
+        onConflict: 'user_id,token,environment',
       },
     );
 
