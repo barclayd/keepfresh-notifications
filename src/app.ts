@@ -68,7 +68,7 @@ export default {
     ),
     user:users!inner (
       device_tokens!inner (
-        id
+        token
       )
     )
   `)
@@ -98,7 +98,7 @@ export default {
             ...item.product.category,
           },
         },
-        deviceTokens: item.user.device_tokens.map(({ id }) => id),
+        deviceTokens: item.user.device_tokens.map(({ token }) => token),
       })),
     );
 
@@ -109,6 +109,10 @@ export default {
       defaultTopic: env.APNS_BUNDLE_ID,
       host: 'api.sandbox.push.apple.com',
     });
+
+    console.log(
+      inventoryItemNotifications.flatMap((item) => item.deviceTokens),
+    );
 
     const allNotifications = inventoryItemNotifications.flatMap(
       (inventoryItemNotification) => {

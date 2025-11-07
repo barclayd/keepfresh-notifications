@@ -20,7 +20,7 @@ export const InventoryItemNotificationSchema = z.object({
       icon: z.string(),
     }),
   }),
-  deviceTokens: z.array(z.coerce.string()),
+  deviceTokens: z.array(z.string()),
 });
 
 export const InventoryItemNotificationsSchema = z.array(
