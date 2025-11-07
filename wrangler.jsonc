@@ -4,7 +4,7 @@
   "compatibility_date": "2025-09-06",
   "compatibility_flags": ["nodejs_compat"],
   "triggers": {
-    "crons": ["35 17 * * *"]
+    "crons": ["55 17 * * *"]
   },
   "observability": {
     "logs": {

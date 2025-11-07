@@ -110,13 +110,9 @@ export default {
       host: 'api.sandbox.push.apple.com',
     });
 
-    console.log(
-      inventoryItemNotifications.flatMap((item) => item.deviceTokens),
-    );
-
     const allNotifications = inventoryItemNotifications.flatMap(
       (inventoryItemNotification) => {
-        const title = `⚠️${truncate(inventoryItemNotification.product.name)} expires in 2 days`;
+        const title = `⚠️ Products expiring in 2 days`;
         const body = `${truncate(inventoryItemNotification.product.name)} (${inventoryItemNotification.product.brand}), located in your ${inventoryItemNotification.storageLocation.toLowerCase()} expires ${getRelativeExpiry(2)}`;
 
         return inventoryItemNotification.deviceTokens.map((deviceToken) =>
