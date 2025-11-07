@@ -7,21 +7,20 @@ import {
 } from '@/utils/field-mapper';
 
 export const InventoryItemNotificationSchema = z.object({
-  id: z.string(),
-  userId: z.string(),
+  id: z.number(),
   storageLocation: storageLocationFieldMapper.outputSchema,
   expiryType: expiryTypeFieldMapper.outputSchema,
   status: z.enum(InventoryItemStatus),
   product: z.object({
     name: z.string(),
     brand: z.string(),
-    amount: z.float32().optional(),
-    unit: z.enum(Units).optional(),
+    amount: z.float32().nullable(),
+    unit: z.enum(Units).nullable(),
     category: z.object({
       icon: z.string(),
     }),
   }),
-  deviceTokens: z.array(z.string()),
+  deviceTokens: z.array(z.coerce.string()),
 });
 
 export const InventoryItemNotificationsSchema = z.array(

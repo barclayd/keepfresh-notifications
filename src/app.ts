@@ -31,9 +31,9 @@ app.get('/health', (c) =>
 export default {
   fetch: app.fetch,
   async scheduled(
-    event: ScheduledEvent,
+    _event: ScheduledEvent,
     _env: Env,
-    ctx: ExecutionContext,
+    _ctx: ExecutionContext,
   ): Promise<void> {
     const supabase = createClient<Database>(
       env.SUPABASE_URL,
@@ -140,10 +140,10 @@ export default {
     const successes = results.filter((r) => r.status === 'fulfilled');
     const failures = results.filter((r) => r.status === 'rejected');
 
-    console.log(`✅ Sent ${successes.length} notifications`);
+    console.log(`Sent ${successes.length} notifications`);
 
     if (failures.length > 0) {
-      console.error(`❌ Failed ${failures.length} notifications after retries`);
+      console.error(`Failed ${failures.length} notifications after retries`);
       failures.forEach((failure, i) => {
         if (failure.status === 'rejected') {
           console.error(`Failed notification ${i}:`, failure.reason);
