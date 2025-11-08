@@ -15,6 +15,41 @@ export const calculateDaysBetween = (
   return Math.round(diffTime / (1000 * 60 * 60 * 24));
 };
 
+export const getOpenedExpiryDate = ({
+  expiryDate,
+  shelfLifeInDaysOpened,
+  shelfLifeInDaysUnopened,
+}: {
+  expiryDate: Date;
+  shelfLifeInDaysUnopened: number | null;
+  shelfLifeInDaysOpened: number | null;
+}) => {
+  if (shelfLifeInDaysOpened === null || shelfLifeInDaysUnopened === null) {
+    return;
+  }
+
+  const differenceInShelfLifeAfterOpening =
+    shelfLifeInDaysUnopened - shelfLifeInDaysOpened;
+
+  if (differenceInShelfLifeAfterOpening <= 0) {
+    return;
+  }
+
+  const daysUntilExpiry = calculateDaysBetween(
+    new Date().toISOString(),
+    expiryDate.toISOString(),
+  );
+
+  if (daysUntilExpiry === null) {
+    return;
+  }
+
+  const daysUntilOpenedExpiry =
+    daysUntilExpiry - differenceInShelfLifeAfterOpening;
+
+  return getRelativeDate(daysUntilOpenedExpiry);
+};
+
 export const getRelativeExpiry = (
   daysOffset: number,
   locale: string = 'en-GB',
@@ -33,4 +68,11 @@ export const getRelativeExpiry = (
       return `on ${dayOfWeek}`;
     }
   }
+};
+
+const getRelativeDate = (daysOffset: number) => {
+  const date = new Date();
+  date.setDate(date.getDate() + daysOffset);
+
+  return date;
 };
