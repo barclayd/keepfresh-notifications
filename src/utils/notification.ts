@@ -112,5 +112,5 @@ export const buildNotificationBody = (
   const itemText = remainingCount === 1 ? 'item' : 'items';
   const locationSummary = getLocationSummary(items);
 
-  return `${truncate(firstItem.product.name)} and ${remainingCount} other ${itemText} (${locationSummary}) expire ${getRelativeExpiry(2)}`;
+  return `${truncate(firstItem.product.name)} and ${remainingCount} other ${itemText} (${locationSummary}) expire ${getRelativeExpiry(daysUntilExpiry)}`;
 };

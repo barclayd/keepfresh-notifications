@@ -17,6 +17,7 @@ import type { StorageLocationDb } from '@/utils/category';
 import { getOpenedExpiryDate } from '@/utils/date';
 import { getSuggestions } from '@/utils/inventory-item';
 import { buildNotificationBody, groupItemsByUser } from '@/utils/notification';
+import { truncate } from '@/utils/product';
 import { sendWithRetry } from '@/utils/retry';
 
 const app = new Hono<HonoEnvironment>();
@@ -172,40 +173,43 @@ const sendExpiryNotifications = async (
     host: apnsHost,
   });
 
+  const currentDate = new Date().toISOString().split('T')[0];
+  const threadId = `expiring-in-${daysOffset}-days-${currentDate}`;
+
   const allNotifications = userNotificationGroups.flatMap((userGroup) => {
-    const body = buildNotificationBody(userGroup.items, daysOffset);
+    return userGroup.items.flatMap((item) => {
+      const body = buildNotificationBody([item], daysOffset);
 
-    if (!body) {
-      return [];
-    }
+      if (!body) {
+        return [];
+      }
 
-    const title =
-      userGroup.items.length === 1
-        ? `${titleEmoji} 1 product ${titleText}`
-        : `${titleEmoji} ${userGroup.items.length} products ${titleText}`;
+      const fullItem = inventoryItemsWithUser.find((i) => i.id === item.id);
 
-    const firstItem = inventoryItemsWithUser.find(
-      (item) => item.id === userGroup.items[0]?.id,
-    );
+      const title = `${titleEmoji} ${truncate(fullItem?.product.name ?? '', 15)} ${titleText}`;
 
-    return userGroup.deviceTokens.map((deviceToken) =>
-      sendWithRetry(async () => {
-        await apnsClient.send(
-          new Notification(deviceToken, {
-            alert: { title, body },
-            badge: userGroup.items.length,
-            sound: 'default',
-            mutableContent: true,
-            data: {
-              type: 'expiringFood',
-              inventoryItemId: firstItem?.id,
-              genmojiId: firstItem?.product.category.icon,
-              itemCount: userGroup.items.length,
-            },
-          }),
-        );
-      }),
-    );
+      return userGroup.deviceTokens.map((deviceToken) =>
+        sendWithRetry(async () => {
+          await apnsClient.send(
+            new Notification(deviceToken, {
+              alert: { title, body },
+              badge: 1,
+              sound: 'default',
+              mutableContent: true,
+              category: 'INVENTORY_ITEM_EXPIRING',
+              threadId,
+              data: {
+                inventoryItemId: fullItem?.id,
+                genmojiId: fullItem?.product.category.icon,
+                status: fullItem?.status,
+                openedExpiryDate: fullItem?.openedExpiryDate,
+                suggestions: fullItem?.suggestions,
+              },
+            }),
+          );
+        }),
+      );
+    });
   });
 
   const results = await Promise.allSettled(allNotifications);
