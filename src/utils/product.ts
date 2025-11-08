@@ -1,2 +1,2 @@
-export const truncate = (str: string): string =>
-  str.length > 35 ? `${str.slice(0, 32)}...` : str;
+export const truncate = (str: string, characterLimit: number = 35): string =>
+  str.length > characterLimit ? `${str.slice(0, characterLimit - 3)}...` : str;

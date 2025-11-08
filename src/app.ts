@@ -7,9 +7,17 @@ import { createClient } from '@supabase/supabase-js';
 import { type Env, Hono } from 'hono';
 import { env } from '@/config/env';
 import { createV1Routes } from '@/routes/v1/api';
+import {
+  type ActiveInventoryItemStatus,
+  ActiveInventoryItemStatuses,
+} from '@/types/category';
 import type { Database } from '@/types/database';
 import type { HonoEnvironment } from '@/types/hono';
+import type { StorageLocationDb } from '@/utils/category';
+import { getOpenedExpiryDate } from '@/utils/date';
+import { getSuggestions } from '@/utils/inventory-item';
 import { buildNotificationBody, groupItemsByUser } from '@/utils/notification';
+import { truncate } from '@/utils/product';
 import { sendWithRetry } from '@/utils/retry';
 
 const app = new Hono<HonoEnvironment>();
@@ -26,11 +34,11 @@ app.get('/health', (c) =>
   }),
 );
 
-async function sendExpiryNotifications(
+const sendExpiryNotifications = async (
   daysOffset: number,
   titleEmoji: string,
   titleText: string,
-): Promise<void> {
+): Promise<void> => {
   const supabase = createClient<Database>(
     env.SUPABASE_URL,
     env.SUPABASE_SERVICE_ROLE,
@@ -53,13 +61,20 @@ async function sendExpiryNotifications(
     storage_location,
     status,
     expiry_type,
+    expiry_date,
     product:products!inner (
       name,
       brand,
       amount,
       unit,
       category:categories!inner (
-        icon
+        icon,
+        shelf_life_in_pantry_in_days_unopened,
+        shelf_life_in_pantry_in_days_opened,
+        shelf_life_in_fridge_in_days_unopened,
+        shelf_life_in_fridge_in_days_opened,
+        shelf_life_in_freezer_in_days_unopened,
+        shelf_life_in_freezer_in_days_opened
       )
     ),
     user:users!inner (
@@ -71,7 +86,8 @@ async function sendExpiryNotifications(
     )
   `)
     .eq('expiry_date', targetDateString)
-    .eq('user.device_tokens.environment', env.APNS_ENVIRONMENT);
+    .eq('user.device_tokens.environment', env.APNS_ENVIRONMENT)
+    .in('status', ActiveInventoryItemStatuses);
 
   if (error) {
     console.error(
@@ -85,23 +101,57 @@ async function sendExpiryNotifications(
     return;
   }
 
-  const inventoryItemsWithUser = data?.map((item) => ({
-    id: item.id,
-    storageLocation: item.storage_location,
-    expiryType: item.expiry_type,
-    status: item.status,
-    product: {
-      name: item.product.name,
-      brand: item.product.brand,
-      amount: item.product.amount,
-      unit: item.product.unit,
-      category: {
-        icon: item.product.category.icon,
+  const inventoryItemsWithUser = data?.map((item) => {
+    const shelfLifeMap: Record<
+      ActiveInventoryItemStatus,
+      Record<StorageLocationDb, number | null>
+    > = {
+      opened: {
+        pantry: item.product.category.shelf_life_in_pantry_in_days_opened,
+        fridge: item.product.category.shelf_life_in_fridge_in_days_opened,
+        freezer: item.product.category.shelf_life_in_freezer_in_days_opened,
       },
-    },
-    userId: item.user.id,
-    deviceTokens: item.user.device_tokens.map(({ token }) => token),
-  }));
+      unopened: {
+        pantry: item.product.category.shelf_life_in_pantry_in_days_unopened,
+        fridge: item.product.category.shelf_life_in_fridge_in_days_unopened,
+        freezer: item.product.category.shelf_life_in_freezer_in_days_unopened,
+      },
+    };
+
+    const openedExpiryDate =
+      item.expiry_date && item.status === 'unopened'
+        ? getOpenedExpiryDate({
+            expiryDate: new Date(item.expiry_date),
+            shelfLifeInDaysOpened: shelfLifeMap.opened[item.storage_location],
+            shelfLifeInDaysUnopened:
+              shelfLifeMap.unopened[item.storage_location],
+          })
+        : undefined;
+
+    return {
+      id: item.id,
+      storageLocation: item.storage_location,
+      expiryType: item.expiry_type,
+      status: item.status,
+      product: {
+        name: item.product.name,
+        brand: item.product.brand,
+        amount: item.product.amount,
+        unit: item.product.unit,
+        category: {
+          icon: item.product.category.icon,
+        },
+      },
+      userId: item.user.id,
+      ...(openedExpiryDate && { openedExpiryDate }),
+      suggestions: getSuggestions({
+        currentStorageLocation: item.storage_location,
+        status: item.status as ActiveInventoryItemStatus,
+        shelfLifeMap,
+      }),
+      deviceTokens: item.user.device_tokens.map(({ token }) => token),
+    };
+  });
 
   if (!inventoryItemsWithUser || inventoryItemsWithUser.length === 0) {
     console.log('No items to notify about');
@@ -123,40 +173,43 @@ async function sendExpiryNotifications(
     host: apnsHost,
   });
 
+  const currentDate = new Date().toISOString().split('T')[0];
+  const threadId = `expiring-in-${daysOffset}-days-${currentDate}`;
+
   const allNotifications = userNotificationGroups.flatMap((userGroup) => {
-    const body = buildNotificationBody(userGroup.items, daysOffset);
+    return userGroup.items.flatMap((item) => {
+      const body = buildNotificationBody([item], daysOffset);
 
-    if (!body) {
-      return [];
-    }
+      if (!body) {
+        return [];
+      }
 
-    const title =
-      userGroup.items.length === 1
-        ? `${titleEmoji} 1 product ${titleText}`
-        : `${titleEmoji} ${userGroup.items.length} products ${titleText}`;
+      const fullItem = inventoryItemsWithUser.find((i) => i.id === item.id);
 
-    const firstItem = inventoryItemsWithUser.find(
-      (item) => item.id === userGroup.items[0]?.id,
-    );
+      const title = `${titleEmoji} ${truncate(fullItem?.product.name ?? '', 15)} ${titleText}`;
 
-    return userGroup.deviceTokens.map((deviceToken) =>
-      sendWithRetry(async () => {
-        await apnsClient.send(
-          new Notification(deviceToken, {
-            alert: { title, body },
-            badge: userGroup.items.length,
-            sound: 'default',
-            mutableContent: true,
-            data: {
-              type: 'expiringFood',
-              inventoryItemId: firstItem?.id,
-              genmojiId: firstItem?.product.category.icon,
-              itemCount: userGroup.items.length,
-            },
-          }),
-        );
-      }),
-    );
+      return userGroup.deviceTokens.map((deviceToken) =>
+        sendWithRetry(async () => {
+          await apnsClient.send(
+            new Notification(deviceToken, {
+              alert: { title, body },
+              badge: 1,
+              sound: 'default',
+              mutableContent: true,
+              category: 'INVENTORY_ITEM_EXPIRING',
+              threadId,
+              data: {
+                inventoryItemId: fullItem?.id,
+                genmojiId: fullItem?.product.category.icon,
+                status: fullItem?.status,
+                openedExpiryDate: fullItem?.openedExpiryDate,
+                suggestions: fullItem?.suggestions,
+              },
+            }),
+          );
+        }),
+      );
+    });
   });
 
   const results = await Promise.allSettled(allNotifications);
@@ -174,7 +227,7 @@ async function sendExpiryNotifications(
       }
     });
   }
-}
+};
 
 export default {
   fetch: app.fetch,
