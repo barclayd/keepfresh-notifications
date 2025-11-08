@@ -186,7 +186,7 @@ const sendExpiryNotifications = async (
 
       const fullItem = inventoryItemsWithUser.find((i) => i.id === item.id);
 
-      const title = `${titleEmoji} ${truncate(fullItem?.product.name ?? '', 15)} ${titleText}`;
+      const title = `${titleEmoji} ${truncate(fullItem?.product.name ?? '', 15)} is ${titleText}`;
 
       return userGroup.deviceTokens.map((deviceToken) =>
         sendWithRetry(async () => {
