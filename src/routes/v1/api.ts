@@ -100,7 +100,7 @@ export const createV1Routes = () => {
         inventoryItemId: parseInt(inventoryItemId, 10),
         genmojiId: 'milk',
         currentLocation: 'pantry',
-        suggestions: ['fridge', 'freezer'],
+        suggestions: ['pantry', 'freezer'],
       },
     });
 
