@@ -99,6 +99,8 @@ export const createV1Routes = () => {
         type: 'expiringFood',
         inventoryItemId: parseInt(inventoryItemId, 10),
         genmojiId: 'milk',
+        currentLocation: 'pantry',
+        suggestions: ['fridge, freezer'],
       },
     });
 
