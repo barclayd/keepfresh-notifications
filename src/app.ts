@@ -186,7 +186,10 @@ const sendExpiryNotifications = async (
 
       const fullItem = inventoryItemsWithUser.find((i) => i.id === item.id);
 
-      const title = `${titleEmoji} ${truncate(fullItem?.product.name ?? '', 15)} is ${titleText}`;
+      const title = `${titleEmoji} ${truncate(fullItem?.product.name ?? '', 12)} ${titleText}`;
+
+      console.log(`openedExpiryDate: ${fullItem?.openedExpiryDate}`);
+      console.log(`suggestions: ${fullItem?.suggestions.join(', ')}`);
 
       return userGroup.deviceTokens.map((deviceToken) =>
         sendWithRetry(async () => {
@@ -203,7 +206,7 @@ const sendExpiryNotifications = async (
                 genmojiId: fullItem?.product.category.icon,
                 status: fullItem?.status,
                 openedExpiryDate: fullItem?.openedExpiryDate,
-                suggestions: fullItem?.suggestions,
+                suggestions: fullItem?.suggestions ?? [],
               },
             }),
           );
@@ -238,10 +241,10 @@ export default {
   ): Promise<void> {
     switch (event.cron) {
       case '0 7 * * *':
-        await sendExpiryNotifications(0, '🚨', 'expiring today');
+        await sendExpiryNotifications(0, '🚨', 'expires today');
         break;
       case '10 23 * * *':
-        await sendExpiryNotifications(2, '⚠️', 'expiring in 2 days');
+        await sendExpiryNotifications(2, '⚠️', 'expires in 2 days');
         break;
       default:
         console.error('Unknown cron trigger:', event.cron);

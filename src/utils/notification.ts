@@ -105,7 +105,7 @@ export const buildNotificationBody = (
   }
 
   if (totalCount === 1) {
-    return `${firstItem.product.name} (${firstItem.product.brand}), located in your ${firstItem.storageLocation.toLowerCase()}, expires ${getRelativeExpiry(daysUntilExpiry)}`;
+    return `${firstItem.product.name} (${firstItem.product.brand}), in your ${firstItem.storageLocation.toLowerCase()}, expires ${getRelativeExpiry(daysUntilExpiry)}`;
   }
 
   const remainingCount = totalCount - 1;
