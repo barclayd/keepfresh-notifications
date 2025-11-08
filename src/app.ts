@@ -240,7 +240,7 @@ export default {
       case '0 7 * * *':
         await sendExpiryNotifications(0, '🚨', 'expiring today');
         break;
-      case '0 18 * * *':
+      case '10 23 * * *':
         await sendExpiryNotifications(2, '⚠️', 'expiring in 2 days');
         break;
       default:
