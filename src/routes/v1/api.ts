@@ -97,7 +97,7 @@ export const createV1Routes = () => {
       mutableContent: true,
       data: {
         type: 'expiringFood',
-        inventoryItemId,
+        inventoryItemId: parseInt(inventoryItemId, 10),
         genmojiId: 'milk',
       },
     });
