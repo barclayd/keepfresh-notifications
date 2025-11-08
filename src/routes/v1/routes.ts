@@ -58,8 +58,13 @@ export const routes = {
   notifications: {
     post: createRoute({
       method: 'post',
-      path: '/notifications',
+      path: '/notifications/{inventoryItemId}',
       middleware: [supabaseMiddleware, authMiddleware],
+      request: {
+        params: z.object({
+          inventoryItemId: z.string(),
+        }),
+      },
       responses: {
         204: {
           description: 'Successfully updated devices for user',

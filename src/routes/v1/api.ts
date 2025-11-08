@@ -42,6 +42,8 @@ export const createV1Routes = () => {
   });
 
   app.openapi(routes.notifications.post, async (c) => {
+    const { inventoryItemId } = c.req.valid('param');
+
     const userId = c.get('userId');
 
     const { data, error } = await c
@@ -80,8 +82,8 @@ export const createV1Routes = () => {
       host: 'api.sandbox.push.apple.com',
     });
 
-    const title = 'Test';
-    const body = 'Notification';
+    const title = 'KeepFresh';
+    const body = 'Test notification';
 
     const items = [{ id: 1 }];
 
@@ -95,7 +97,7 @@ export const createV1Routes = () => {
       mutableContent: true,
       data: {
         type: 'expiringFood',
-        inventoryItemId: 162,
+        inventoryItemId,
         genmojiId: 'milk',
       },
     });
