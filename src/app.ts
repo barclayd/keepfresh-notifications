@@ -200,7 +200,9 @@ const sendExpiryNotifications = async (
                 inventoryItemId: item.id,
                 genmojiId: item.product.category.icon,
                 status: item.status,
-                openedExpiryDate: item.openedExpiryDate,
+                ...(item.openedExpiryDate && {
+                  openedExpiryDate: item.openedExpiryDate,
+                }),
                 suggestions: item.suggestions,
               },
             }),
@@ -238,7 +240,7 @@ export default {
       case '0 7 * * *':
         await sendExpiryNotifications(0, '🚨', 'expires today');
         break;
-      case '46 11 * * *':
+      case '54 11 * * *':
         await sendExpiryNotifications(2, '⚠️', 'expires in 2 days');
         break;
       default:
