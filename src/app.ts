@@ -195,7 +195,6 @@ const sendExpiryNotifications = async (
               badge: 1,
               sound: 'default',
               mutableContent: true,
-              category: 'INVENTORY_ITEM_EXPIRING',
               threadId,
               data: {
                 inventoryItemId: item.id,
