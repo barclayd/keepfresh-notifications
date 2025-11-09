@@ -143,7 +143,7 @@ const sendExpiryNotifications = async (
         },
       },
       userId: item.user.id,
-      ...(openedExpiryDate && { openedExpiryDate }),
+      openedExpiryDate,
       suggestions: getSuggestions({
         currentStorageLocation: item.storage_location,
         status: item.status as ActiveInventoryItemStatus,
@@ -240,7 +240,7 @@ export default {
       case '0 7 * * *':
         await sendExpiryNotifications(0, '🚨', 'expires today');
         break;
-      case '54 11 * * *':
+      case '0 18 * * *':
         await sendExpiryNotifications(2, '⚠️', 'expires in 2 days');
         break;
       default:
