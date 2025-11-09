@@ -178,18 +178,14 @@ const sendExpiryNotifications = async (
 
   const allNotifications = userNotificationGroups.flatMap((userGroup) => {
     return userGroup.items.flatMap((item) => {
-      const body = buildNotificationBody([item], daysOffset);
+      const body = buildNotificationBody(item, daysOffset);
 
-      if (!body) {
-        return [];
-      }
+      const title = `${titleEmoji} ${truncate(item.product.name, 12)} ${titleText}`;
 
-      const fullItem = inventoryItemsWithUser.find((i) => i.id === item.id);
-
-      const title = `${titleEmoji} ${truncate(fullItem?.product.name ?? '', 12)} ${titleText}`;
-
-      console.log(`openedExpiryDate: ${fullItem?.openedExpiryDate}`);
-      console.log(`suggestions: ${fullItem?.suggestions.join(', ')}`);
+      console.log(`name: ${item.product.name}`);
+      console.log(`status: ${item.status}`);
+      console.log(`openedExpiryDate: ${item.openedExpiryDate}`);
+      console.log(`suggestions: ${item.suggestions.join(', ')}`);
 
       return userGroup.deviceTokens.map((deviceToken) =>
         sendWithRetry(async () => {
@@ -202,11 +198,11 @@ const sendExpiryNotifications = async (
               category: 'INVENTORY_ITEM_EXPIRING',
               threadId,
               data: {
-                inventoryItemId: fullItem?.id,
-                genmojiId: fullItem?.product.category.icon,
-                status: fullItem?.status,
-                openedExpiryDate: fullItem?.openedExpiryDate,
-                suggestions: fullItem?.suggestions ?? [],
+                inventoryItemId: item.id,
+                genmojiId: item.product.category.icon,
+                status: item.status,
+                openedExpiryDate: item.openedExpiryDate,
+                suggestions: item.suggestions,
               },
             }),
           );
@@ -243,7 +239,7 @@ export default {
       case '0 7 * * *':
         await sendExpiryNotifications(0, '🚨', 'expires today');
         break;
-      case '6 0 * * *':
+      case '32 0 * * *':
         await sendExpiryNotifications(2, '⚠️', 'expires in 2 days');
         break;
       default:

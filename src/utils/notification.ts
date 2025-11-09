@@ -1,13 +1,21 @@
 import { getRelativeExpiry } from '@/utils/date';
-import { truncate } from './product';
 
 export type InventoryItemForNotification = {
   id: number;
   storageLocation: string;
+  expiryType: string | null;
+  status: string;
   product: {
     name: string;
     brand: string;
+    amount: number | null;
+    unit: string | null;
+    category: {
+      icon: string | null;
+    };
   };
+  openedExpiryDate?: Date;
+  suggestions: string[];
 };
 
 export type UserNotificationGroup = {
@@ -20,10 +28,19 @@ export const groupItemsByUser = (
   items: Array<{
     id: number;
     storageLocation: string;
+    expiryType: string | null;
+    status: string;
     product: {
       name: string;
       brand: string;
+      amount: number | null;
+      unit: string | null;
+      category: {
+        icon: string | null;
+      };
     };
+    openedExpiryDate?: Date;
+    suggestions: string[];
     userId: string;
     deviceTokens: string[];
   }>,
@@ -48,10 +65,19 @@ export const groupItemsByUser = (
     userGroup.items.push({
       id: item.id,
       storageLocation: item.storageLocation,
+      expiryType: item.expiryType,
+      status: item.status,
       product: {
         name: item.product.name,
         brand: item.product.brand,
+        amount: item.product.amount,
+        unit: item.product.unit,
+        category: {
+          icon: item.product.category.icon,
+        },
       },
+      openedExpiryDate: item.openedExpiryDate,
+      suggestions: item.suggestions,
     });
 
     for (const token of item.deviceTokens) {
@@ -64,53 +90,9 @@ export const groupItemsByUser = (
   return Array.from(userMap.values());
 };
 
-const getLocationSummary = (items: InventoryItemForNotification[]): string => {
-  const locationCounts = new Map<string, number>();
-
-  for (const item of items) {
-    const location = item.storageLocation.toLowerCase();
-    locationCounts.set(location, (locationCounts.get(location) || 0) + 1);
-  }
-
-  const locationParts = Array.from(locationCounts.entries()).map(
-    ([location, count]) => `${count} in your ${location}`,
-  );
-
-  if (locationParts.length === 1 && typeof locationParts[0] === 'string') {
-    return locationParts[0];
-  }
-
-  if (locationParts.length === 2) {
-    return `${locationParts[0]} and ${locationParts[1]}`;
-  }
-
-  const lastPart = locationParts.pop();
-  return `${locationParts.join(', ')}, and ${lastPart}`;
-};
-
 export const buildNotificationBody = (
-  items: InventoryItemForNotification[],
+  item: InventoryItemForNotification,
   daysUntilExpiry: number,
-): string | undefined => {
-  const totalCount = items.length;
-
-  if (totalCount === 0) {
-    return;
-  }
-
-  const firstItem = items[0];
-
-  if (!firstItem) {
-    return;
-  }
-
-  if (totalCount === 1) {
-    return `${firstItem.product.name} (${firstItem.product.brand}), in your ${firstItem.storageLocation.toLowerCase()}, expires ${getRelativeExpiry(daysUntilExpiry)}`;
-  }
-
-  const remainingCount = totalCount - 1;
-  const itemText = remainingCount === 1 ? 'item' : 'items';
-  const locationSummary = getLocationSummary(items);
-
-  return `${truncate(firstItem.product.name)} and ${remainingCount} other ${itemText} (${locationSummary}) expire ${getRelativeExpiry(daysUntilExpiry)}`;
+): string => {
+  return `${item.product.name} (${item.product.brand}), in your ${item.storageLocation.toLowerCase()}, expires ${getRelativeExpiry(daysUntilExpiry)}`;
 };
